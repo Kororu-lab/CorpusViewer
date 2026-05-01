@@ -32,6 +32,14 @@ CorpusViewer-v1.0.0-win-x64/
   기타 실행에 필요한 파일들
 ```
 
+## 지원 말뭉치
+
+아래의 말뭉치는 현재 파싱 및 색인이 확인됨.
+
+- `NIKL_DIALOGUE_2023_v1.1.zip`
+- `NIKL_DIALOGUE_2024_v1.0.zip`
+- `NIKL_MESSENGER_v2.0_JSON.zip`
+
 ## 주요 기능
 
 - ZIP, JSON, CSV, 폴더 단위 말뭉치 가져오기 및 재색인
