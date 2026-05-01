@@ -34,7 +34,7 @@ CorpusViewer-v1.0.0-win-x64/
 
 ## 지원 말뭉치
 
-아래 항목은 국립국어원 [모두의 말뭉치](https://kli.korean.go.kr/corpus/main/requestMain.do) 공식 목록과 대조하고, 현재 파싱 및 색인이 확인됨.
+아래 항목은 국립국어원 [모두의 말뭉치](https://kli.korean.go.kr/corpus/main/requestMain.do) 공식 목록과 대조하고, 현재 파싱 및 색인이 확인됨. 지속적으로 추가할 예정.
 
 | 말뭉치 | 공식 버전 | 확인한 파일명 | 지원 상태 | 공식 URL |
 | --- | --- | --- | --- | --- |
@@ -75,7 +75,7 @@ CQL-lite는 `[text="..."]`, `[lemma="..."]`, `[pos="..."]` 형태의 토큰 조�
 
 ## 라이선스
 
-CorpusViewer 프로그램 코드는 [MIT License](LICENSE)로 배포합니다.
+CorpusViewer 프로그램 코드는 [MIT License](LICENSE)로 배포됨.
 
 말뭉치 원자료, 사용자가 직접 넣는 ZIP/JSON/CSV 데이터, 원자료에서 생성한 색인 데이터베이스는 이 저장소에 포함되지 않으며 MIT License 적용 대상이 아님. 해당 데이터의 사용, 보관, 재배포 책임은 원자료 제공처의 라이선스와 사용자의 이용 조건을 따름.
 
