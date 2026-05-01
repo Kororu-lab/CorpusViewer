@@ -34,11 +34,13 @@ CorpusViewer-v1.0.0-win-x64/
 
 ## 지원 말뭉치
 
-아래의 말뭉치는 현재 파싱 및 색인이 확인됨.
+아래 항목은 국립국어원 [모두의 말뭉치](https://kli.korean.go.kr/corpus/main/requestMain.do) 공식 목록과 대조하고, 현재 파싱 및 색인이 확인됨.
 
-- `NIKL_DIALOGUE_2023_v1.1.zip`
-- `NIKL_DIALOGUE_2024_v1.0.zip`
-- `NIKL_MESSENGER_v2.0_JSON.zip`
+| 말뭉치 | 공식 버전 | 확인한 파일명 | 지원 상태 | 공식 URL |
+| --- | --- | --- | --- | --- |
+| 일상 대화 말뭉치 2023 | 1.1 | `NIKL_DIALOGUE_2023_v1.1.zip` | 지원, 파싱/색인 확인 | [모두의 말뭉치 검색](https://kli.korean.go.kr/corpus/main/requestMain.do?tabType=thumb&lang=ko&keyword=%EC%9D%BC%EC%83%81%20%EB%8C%80%ED%99%94%20%EB%A7%90%EB%AD%89%EC%B9%98%202023) |
+| 일상 대화 말뭉치 2024 | 1.0 | `NIKL_DIALOGUE_2024_v1.0.zip` | 지원, 파싱/색인 확인 | [모두의 말뭉치 검색](https://kli.korean.go.kr/corpus/main/requestMain.do?tabType=thumb&lang=ko&keyword=%EC%9D%BC%EC%83%81%20%EB%8C%80%ED%99%94%20%EB%A7%90%EB%AD%89%EC%B9%98%202024) |
+| 메신저 말뭉치 | 2.0 | `NIKL_MESSENGER_v2.0_JSON.zip` | 지원, 파싱/색인 확인 | [모두의 말뭉치 검색](https://kli.korean.go.kr/corpus/main/requestMain.do?tabType=thumb&lang=ko&keyword=%EB%A9%94%EC%8B%A0%EC%A0%80%20%EB%A7%90%EB%AD%89%EC%B9%98) |
 
 ## 주요 기능
 
