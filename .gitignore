@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+out/
+dist/
+release/
+*.tsbuildinfo
+
+# Runtime database and generated app data
+CorpusViewerData/
+GovCorpusData/
+*.sqlite
+*.sqlite-*
+*.db
+*.db-*
+
+# Local corpus data
+corpora/*
+!corpora/.gitkeep
+!corpora/README.md
+_corpus_unzipped/
+NIKL_*.zip
+
+# Logs and local machine files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

@@ -1,0 +1,66 @@
+{
+  "name": "corpusviewer",
+  "version": "1.0.0",
+  "description": "Portable corpus search, statistics, and exploration app for Korean linguists.",
+  "main": "out/main/index.js",
+  "author": "Kororu-lab",
+  "license": "MIT",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "package": "node scripts/package-release.mjs",
+    "test": "vitest run --pool=threads --poolOptions.threads.singleThread=true",
+    "smoke": "node scripts/smoke-worker.mjs",
+    "benchmark:large-db": "node scripts/benchmark-large-db.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.9.1",
+    "csv-parse": "^5.6.0",
+    "json5": "^2.2.3",
+    "lucide-react": "^0.468.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "yauzl": "^3.2.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.10.5",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@types/yauzl": "^2.10.3",
+    "@vitejs/plugin-react": "^4.3.4",
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8",
+    "electron-vite": "^2.3.0",
+    "typescript": "^5.7.2",
+    "vite": "^5.4.14",
+    "vitest": "^2.1.8"
+  },
+  "build": {
+    "appId": "kr.corpusviewer.desktop",
+    "productName": "CorpusViewer",
+    "asar": false,
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "out/**/*",
+      "package.json"
+    ],
+    "asarUnpack": [
+      "node_modules/better-sqlite3/**/*"
+    ],
+    "win": {
+      "signAndEditExecutable": false,
+      "target": [
+        {
+          "target": "dir",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    }
+  }
+}
