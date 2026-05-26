@@ -4,9 +4,21 @@ import path from 'node:path';
 const root = process.cwd();
 const releaseRoot = path.join(root, 'release');
 const portableRoot = path.join(releaseRoot, 'win-unpacked');
-const dataDirNames = ['CorpusViewerData', 'GovCorpusData'];
+const preservedDirs = [
+  { name: 'CorpusViewerData', replaceGenerated: false },
+  { name: 'GovCorpusData', replaceGenerated: false },
+  { name: 'corpora', replaceGenerated: true }
+];
 const markerPath = path.join(releaseRoot, '.corpusviewer-data-backup.json');
 const action = process.argv[2];
+
+function assertInsidePortable(targetPath) {
+  const resolvedPortableRoot = path.resolve(portableRoot);
+  const resolvedTarget = path.resolve(targetPath);
+  if (resolvedTarget !== resolvedPortableRoot && !resolvedTarget.startsWith(`${resolvedPortableRoot}${path.sep}`)) {
+    throw new Error(`Refusing to touch path outside portable folder: ${targetPath}`);
+  }
+}
 
 function backup() {
   if (existsSync(markerPath)) {
@@ -16,12 +28,14 @@ function backup() {
   mkdirSync(releaseRoot, { recursive: true });
   const backups = [];
 
-  for (const name of dataDirNames) {
+  for (const dir of preservedDirs) {
+    const { name, replaceGenerated } = dir;
     const dataDir = path.join(portableRoot, name);
     if (!existsSync(dataDir)) continue;
+    assertInsidePortable(dataDir);
     const backupDir = path.join(releaseRoot, `.${name}.backup-${Date.now()}-${process.pid}`);
     renameSync(dataDir, backupDir);
-    backups.push({ name, backupDir });
+    backups.push({ name, backupDir, replaceGenerated });
     console.log(`Preserved existing ${name} at ${backupDir}`);
   }
 
@@ -48,7 +62,8 @@ function restore() {
   for (const backup of backups) {
     const name = String(backup.name || '');
     const backupDir = String(backup.backupDir || '');
-    if (!dataDirNames.includes(name) || !backupDir) {
+    const dir = preservedDirs.find((item) => item.name === name);
+    if (!dir || !backupDir) {
       unlinkSync(markerPath);
       throw new Error(`Backup marker contains an invalid entry: ${markerPath}`);
     }
@@ -58,9 +73,10 @@ function restore() {
     }
 
     const dataDir = path.join(portableRoot, name);
+    assertInsidePortable(dataDir);
     if (existsSync(dataDir)) {
       const entries = readdirSync(dataDir);
-      if (entries.length > 0) {
+      if (entries.length > 0 && !dir.replaceGenerated) {
         throw new Error(`Refusing to overwrite non-empty runtime data at ${dataDir}`);
       }
       rmSync(dataDir, { recursive: true, force: true });

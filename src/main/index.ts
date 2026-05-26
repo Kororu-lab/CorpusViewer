@@ -13,7 +13,7 @@ function createWindow(): void {
     height: 880,
     minWidth: 1100,
     minHeight: 720,
-    title: 'CorpusViewer',
+    title: 'CorpusViewer Standard',
     backgroundColor: '#f7f8fb',
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.js'),

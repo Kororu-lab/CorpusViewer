@@ -9,7 +9,7 @@ const corporaDir = path.join(portableRoot, 'corpora');
 const dataDirs = ['CorpusViewerData', 'GovCorpusData'].map((name) => path.join(portableRoot, name));
 const packageJson = JSON.parse(readFileSync(path.join(root, 'package.json'), 'utf8'));
 const version = typeof packageJson.version === 'string' ? packageJson.version : '0.0.0';
-const archivePath = path.join(releaseRoot, `CorpusViewer-v${version}-win-x64.zip`);
+const archivePath = path.join(releaseRoot, `CorpusViewer-Standard-v${version}-win-x64.zip`);
 
 if (!existsSync(portableRoot)) {
   throw new Error(`Portable folder does not exist: ${portableRoot}`);
@@ -44,7 +44,7 @@ writeFileSync(
     '',
     '1. Windows 파일 탐색기로 이 corpora 폴더를 엽니다.',
     '2. NIKL_*.zip 파일을 이 폴더에 복사합니다.',
-    '3. CorpusViewer.exe를 실행합니다.',
+    '3. CorpusViewer Standard.exe를 실행합니다.',
     '4. 앱의 말뭉치 화면에서 "corpora 폴더 가져오기"를 누릅니다.',
     ''
   ].join('\n'),
@@ -54,11 +54,11 @@ writeFileSync(
 writeFileSync(
   path.join(portableRoot, '사용법.txt'),
   [
-    'CorpusViewer 사용법',
+    'CorpusViewer Standard 사용법',
     '',
     '1. 이 ZIP 파일을 원하는 위치에 압축 해제합니다.',
-    '2. CorpusViewer.exe 옆의 corpora 폴더에 말뭉치 ZIP 파일을 복사합니다.',
-    '3. CorpusViewer.exe를 더블클릭합니다.',
+    '2. CorpusViewer Standard.exe 옆의 corpora 폴더에 말뭉치 ZIP 파일을 복사합니다.',
+    '3. CorpusViewer Standard.exe를 더블클릭합니다.',
     '4. 왼쪽의 "말뭉치" 화면에서 "corpora 폴더 가져오기"를 누릅니다.',
     '5. 색인이 끝나면 검색, 통계, 공기어, 탐색 화면을 사용합니다.',
     '',

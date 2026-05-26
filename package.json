@@ -1,6 +1,6 @@
 {
-  "name": "corpusviewer",
-  "version": "1.0.0",
+  "name": "corpusviewer-standard",
+  "version": "1.0.1",
   "description": "Portable corpus search, statistics, and exploration app for Korean linguists.",
   "main": "out/main/index.js",
   "author": "Kororu-lab",
@@ -11,12 +11,15 @@
     "package": "node scripts/package-release.mjs",
     "test": "vitest run --pool=threads --poolOptions.threads.singleThread=true",
     "smoke": "node scripts/smoke-worker.mjs",
+    "maintenance:git": "node scripts/cleanup-git-garbage.mjs",
+    "maintenance:git:dry-run": "node scripts/cleanup-git-garbage.mjs --dry-run",
     "benchmark:large-db": "node scripts/benchmark-large-db.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "better-sqlite3": "^11.9.1",
     "csv-parse": "^5.6.0",
+    "hypua-unicoder": "^1.0.0",
     "json5": "^2.2.3",
     "lucide-react": "^0.468.0",
     "react": "^18.3.1",
@@ -39,7 +42,7 @@
   },
   "build": {
     "appId": "kr.corpusviewer.desktop",
-    "productName": "CorpusViewer",
+    "productName": "CorpusViewer Standard",
     "asar": false,
     "directories": {
       "output": "release"

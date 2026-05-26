@@ -23,6 +23,7 @@ function bin(name) {
 let failed = false;
 
 try {
+  run(process.execPath, ['scripts/cleanup-git-garbage.mjs']);
   run(process.execPath, ['scripts/preserve-release-data.mjs', 'backup']);
   run(bin('electron-vite'), ['build'], { shell: isWindows });
   run(bin('electron-builder'), ['--dir', '--win'], { shell: isWindows });

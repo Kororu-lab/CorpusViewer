@@ -20,6 +20,8 @@ corpora/*
 !corpora/.gitkeep
 !corpora/README.md
 _corpus_unzipped/
+new/
+*.zip
 NIKL_*.zip
 
 # Logs and local machine files

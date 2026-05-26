@@ -1,3 +1,5 @@
+import { normalizeLegacyHangulText } from '../shared/textNormalization';
+
 export interface NormalizedToken {
   surface: string;
   normalized: string;
@@ -6,7 +8,7 @@ export interface NormalizedToken {
 const MARKER_PATTERN = /^\{[^\}]+\}$/u;
 
 export function normalizeToken(surface: string): string {
-  const trimmed = surface.trim();
+  const trimmed = normalizeLegacyHangulText(surface).trim();
   if (!trimmed) return '';
   if (MARKER_PATTERN.test(trimmed)) return trimmed.toLowerCase();
 

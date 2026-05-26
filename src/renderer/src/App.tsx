@@ -21,7 +21,18 @@ import {
   Wand2,
   XCircle
 } from 'lucide-react';
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type Dispatch, type SetStateAction } from 'react';
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type Dispatch,
+  type ReactNode,
+  type SetStateAction
+} from 'react';
 import type {
   AppState,
   CollocationResponse,
@@ -37,6 +48,8 @@ import type {
   StatsResponse,
   TextField
 } from '@shared/types';
+import { corpusUnitLabel, inferSourceFormatFromCorpus, isPseudoSpeaker, type CorpusSourceFormat } from '@shared/corpusInfo';
+import { normalizeLegacyHangulText } from '@shared/textNormalization';
 import { mergeSentenceGroupsIntoBundles, mergeUtterancesIntoSentences, type ExploreSentenceGroup } from './sentenceMerge';
 
 type Tab = 'manager' | 'search' | 'stats' | 'collocation' | 'explore';
@@ -50,6 +63,7 @@ type ExploreViewMode =
   | 'speakerBundle';
 
 const emptyFilters: SearchFilters = {};
+const SOURCE_GAP_CHAR = '\u25A1';
 
 interface StopwordControlProps {
   stopwordsText: string;
@@ -88,6 +102,28 @@ function withSpeakerExploreMode(mode: ExploreViewMode, speakerMode: boolean): Ex
 
 function withExploreTextUnit(mode: ExploreViewMode, unit: ExploreTextUnit): ExploreViewMode {
   return toExploreViewMode(isSpeakerExploreMode(mode), unit);
+}
+
+function unitLabelForCorpus(corpus: CorpusRecord): string {
+  return corpus.unitLabel ?? corpusUnitLabel(inferSourceFormatFromCorpus(corpus));
+}
+
+function unitLabelForDocument(detail: DocumentDetail | DocumentListItem): string {
+  return detail.unitLabel ?? corpusUnitLabel((detail.sourceFormat as CorpusSourceFormat | undefined) ?? 'unknown');
+}
+
+function renderCorpusText(value: string): ReactNode {
+  const normalized = normalizeLegacyHangulText(value);
+  if (!normalized.includes(SOURCE_GAP_CHAR)) return normalized;
+  return normalized.split(/(\u25A1+)/gu).map((part, index) =>
+    part.startsWith(SOURCE_GAP_CHAR) ? (
+      <span className="source-gap" title={`${part.length}자 원문 판독 불가 표시`} key={`${index}:${part.length}`}>
+        {part}
+      </span>
+    ) : (
+      <Fragment key={index}>{part}</Fragment>
+    )
+  );
 }
 
 function useStopwordFilters(stopwordsText: string): [SearchFilters, Dispatch<SetStateAction<SearchFilters>>] {
@@ -193,7 +229,7 @@ export function App(): JSX.Element {
         <div className="brand">
           <div className="brand-mark">G</div>
           <div className="brand-text">
-            <h1>CorpusViewer</h1>
+            <h1>CorpusViewer Standard</h1>
             <p>말뭉치 검색 도구</p>
           </div>
         </div>
@@ -247,7 +283,15 @@ export function App(): JSX.Element {
             onOpenCorporaFolder={() =>
               void runBusy(() => window.corpusViewer.openCorporaFolder(), '말뭉치 폴더를 열었습니다.')
             }
-            onDelete={(corpusId) => void runBusy(() => window.corpusViewer.deleteCorpus(corpusId), '말뭉치를 삭제했습니다.')}
+            onDelete={(corpusId) => {
+              const corpus = state.corpora.find((item) => item.id === corpusId);
+              const corpusName = corpus?.name ?? '선택한 말뭉치';
+              const confirmed = window.confirm(
+                `${corpusName} 색인을 삭제할까요?\n\n원본 말뭉치 파일은 삭제하지 않고, 이 프로그램이 만든 검색 색인만 삭제합니다.`
+              );
+              if (!confirmed) return;
+              void runBusy(() => window.corpusViewer.deleteCorpus(corpusId), '말뭉치를 삭제했습니다.');
+            }}
             onRebuild={(corpusId) => void runBusy(() => window.corpusViewer.rebuildCorpus(corpusId), '색인을 다시 만들었습니다.')}
             onCancel={() => void window.corpusViewer.cancelCurrentJob()}
           />
@@ -281,7 +325,7 @@ function ProgressStrip({ progress }: { progress: ImportProgress }): JSX.Element 
       <span>{progress.label}</span>
       <strong>{phaseLabel(progress.phase)}</strong>
       <span>파일 {progress.filesDone.toLocaleString()}개</span>
-      <span>발화 {progress.utterancesDone.toLocaleString()}개</span>
+      <span>본문 단위 {progress.utterancesDone.toLocaleString()}개</span>
       {progress.message && <em>{progress.message}</em>}
     </div>
   );
@@ -405,7 +449,7 @@ function CorpusManager({
             <div className="metric-row">
               <Metric label="파일" value={corpus.fileCount} />
               <Metric label="문서" value={corpus.documentCount} />
-              <Metric label="발화" value={corpus.utteranceCount} />
+              <Metric label={unitLabelForCorpus(corpus)} value={corpus.utteranceCount} />
               <Metric label="토큰" value={corpus.tokenCount} />
             </div>
             {corpus.error && <div className="error-text">{corpus.error}</div>}
@@ -414,7 +458,7 @@ function CorpusManager({
                 <Wand2 size={16} />
                 재색인
               </button>
-              <button className="danger" onClick={() => onDelete(corpus.id)} disabled={busy}>
+              <button className="danger" onClick={() => onDelete(corpus.id)}>
                 <Trash2 size={16} />
                 삭제
               </button>
@@ -529,8 +573,8 @@ function SearchPanel({ state, stopwordsText, stopwordsPath, onStopwordsTextChang
             <label>
               텍스트
               <select value={field} onChange={(event) => setField(event.target.value as TextField)}>
-                <option value="form">정규화 발화</option>
-                <option value="original_form">원문 발화</option>
+                <option value="form">정규화 텍스트</option>
+                <option value="original_form">원문 텍스트</option>
               </select>
             </label>
             <label>
@@ -563,11 +607,11 @@ function SearchPanel({ state, stopwordsText, stopwordsPath, onStopwordsTextChang
               {result.start !== null && result.start !== undefined && <span>{result.start.toFixed(2)}s</span>}
             </div>
             <div className="kwic">
-              <span className="left">{result.kwic.left.join(' ')}</span>
-              <mark>{result.kwic.hit.join(' ')}</mark>
-              <span className="right">{result.kwic.right.join(' ')}</span>
+              <span className="left">{renderCorpusText(result.kwic.left.join(' '))}</span>
+              <mark>{renderCorpusText(result.kwic.hit.join(' '))}</mark>
+              <span className="right">{renderCorpusText(result.kwic.right.join(' '))}</span>
             </div>
-            <p>{field === 'form' ? result.form : result.originalForm}</p>
+            <p>{renderCorpusText(field === 'form' ? result.form : result.originalForm)}</p>
           </article>
         ))}
       </div>
@@ -639,7 +683,7 @@ function StatsPanel({ state, stopwordsText, stopwordsPath, onStopwordsTextChange
           <div className="metric-row wide">
             <Metric label="말뭉치" value={stats.summary.corpusCount} />
             <Metric label="문서" value={stats.summary.documentCount} />
-            <Metric label="발화" value={stats.summary.utteranceCount} />
+            <Metric label="본문 단위" value={stats.summary.utteranceCount} />
             <Metric label="토큰" value={stats.summary.tokenCount} />
             <Metric label="화자" value={stats.summary.speakerCount} />
             <Metric label="비언어 표지" value={stats.summary.nonSpeechCount} />
@@ -838,18 +882,24 @@ function ExplorePanel({ state }: { state: AppState }): JSX.Element {
   );
   const speakerColumnIds = useMemo(() => {
     if (!detail) return [];
-    const fromSpeakers = detail.speakers.map((speaker) => String(speaker.id ?? '').trim()).filter(Boolean);
+    const fromSpeakers = detail.speakers
+      .filter((speaker) => !isPseudoSpeaker(speaker))
+      .map((speaker) => String(speaker.id ?? '').trim())
+      .filter(Boolean);
     const fromUtterances = detail.utterances.map((utterance) => utterance.speakerId.trim()).filter(Boolean);
-    return Array.from(new Set([...fromSpeakers, ...fromUtterances]));
+    return Array.from(new Set([...fromSpeakers, ...fromUtterances.filter((speakerId) => !isPseudoSpeaker(speakerId))]));
   }, [detail]);
   const sentenceGroups = useMemo(() => (detail ? mergeUtterancesIntoSentences(detail.utterances) : []), [detail]);
   const bundleGroups = useMemo(() => mergeSentenceGroupsIntoBundles(sentenceGroups), [sentenceGroups]);
+  const canUseSpeakerMode = Boolean(detail?.isDialogue) && speakerColumnIds.length > 0;
   const effectiveViewMode: ExploreViewMode =
-    speakerColumnIds.length === 0 && isSpeakerExploreMode(exploreViewMode)
+    !canUseSpeakerMode && isSpeakerExploreMode(exploreViewMode)
       ? withSpeakerExploreMode(exploreViewMode, false)
       : exploreViewMode;
   const speakerModeActive = isSpeakerExploreMode(effectiveViewMode);
   const activeTextUnit = exploreTextUnit(effectiveViewMode);
+  const detailUnitLabel = detail ? unitLabelForDocument(detail) : '발화';
+  const sentenceButtonLabel = detailUnitLabel === '발화' ? '문장' : '병합';
 
   useEffect(() => {
     const handlePointerMove = (event: PointerEvent): void => {
@@ -1007,8 +1057,10 @@ function ExplorePanel({ state }: { state: AppState }): JSX.Element {
             onClick={() => void loadDocumentDetail(doc.corpusId, doc.docId)}
           >
             <strong>{doc.docId}</strong>
-            <span>{doc.topic}</span>
-            <em>{doc.utteranceCount.toLocaleString()} 발화</em>
+            <span>{renderCorpusText(doc.topic)}</span>
+            <em>
+              {doc.utteranceCount.toLocaleString()} {unitLabelForDocument(doc)}
+            </em>
           </button>
         ))}
         {selected && (
@@ -1046,41 +1098,43 @@ function ExplorePanel({ state }: { state: AppState }): JSX.Element {
             <header className="document-detail-head">
               <div>
                 <h3>{detail.docId}</h3>
-                <p>{detail.topic}</p>
+                <p>{renderCorpusText(detail.topic)}</p>
               </div>
               <div className="detail-actions">
-                <div className="segmented-control" aria-label="문서 보기 방식">
-                  <button
-                    className={!speakerModeActive ? 'active' : ''}
-                    onClick={() => setExploreViewMode((current) => withSpeakerExploreMode(current, false))}
-                    title="일반 발화 보기"
-                  >
-                    <LayoutList size={16} />
-                    일반
-                  </button>
-                  <button
-                    className={speakerModeActive ? 'active' : ''}
-                    onClick={() => setExploreViewMode((current) => withSpeakerExploreMode(current, true))}
-                    title="화자별 컬럼 보기"
-                  >
-                    <Users size={16} />
-                    화자별
-                  </button>
-                </div>
+                {canUseSpeakerMode && (
+                  <div className="segmented-control" aria-label="문서 보기 방식">
+                    <button
+                      className={!speakerModeActive ? 'active' : ''}
+                      onClick={() => setExploreViewMode((current) => withSpeakerExploreMode(current, false))}
+                      title="일반 보기"
+                    >
+                      <LayoutList size={16} />
+                      일반
+                    </button>
+                    <button
+                      className={speakerModeActive ? 'active' : ''}
+                      onClick={() => setExploreViewMode((current) => withSpeakerExploreMode(current, true))}
+                      title="화자별 컬럼 보기"
+                    >
+                      <Users size={16} />
+                      화자별
+                    </button>
+                  </div>
+                )}
                 <div className="segmented-control" aria-label="본문 표시 단위">
                   <button
                     className={activeTextUnit === 'utterance' ? 'active' : ''}
                     onClick={() => setExploreViewMode((current) => withExploreTextUnit(current, 'utterance'))}
-                    title="발화 단위로 본문 보기"
+                    title={`${detailUnitLabel} 단위로 본문 보기`}
                   >
-                    발화
+                    {detailUnitLabel}
                   </button>
                   <button
                     className={activeTextUnit === 'sentence' ? 'active' : ''}
                     onClick={() => setExploreViewMode((current) => withExploreTextUnit(current, 'sentence'))}
-                    title="문장 단위로 본문 보기"
+                    title={detailUnitLabel === '발화' ? '문장 단위로 본문 보기' : '가까운 문장 행을 보수적으로 병합'}
                   >
-                    문장
+                    {sentenceButtonLabel}
                   </button>
                   <button
                     className={activeTextUnit === 'bundle' ? 'active' : ''}
@@ -1096,20 +1150,22 @@ function ExplorePanel({ state }: { state: AppState }): JSX.Element {
                 </button>
               </div>
             </header>
-            <div className="speaker-strip">
-              {detail.speakers.map((speaker, index) => (
-                <span key={index}>
-                  {String(speaker.id ?? '')} {String(speaker.sex ?? '')} {String(speaker.age ?? '')}
-                </span>
-              ))}
-            </div>
+            {canUseSpeakerMode && (
+              <div className="speaker-strip">
+                {detail.speakers.filter((speaker) => !isPseudoSpeaker(speaker)).map((speaker, index) => (
+                  <span key={index}>
+                    {String(speaker.id ?? '')} {String(speaker.sex ?? '')} {String(speaker.age ?? '')}
+                  </span>
+                ))}
+              </div>
+            )}
             <div className="pager">
               <button
                 onClick={() => void loadDocumentDetail(detail.corpusId, detail.docId, Math.max(0, detail.utteranceOffset - 500))}
                 disabled={detailLoading || detail.utteranceOffset === 0}
               >
                 <ChevronLeft size={16} />
-                이전 발화
+                이전 {detailUnitLabel}
               </button>
               <span>
                 {detail.utteranceOffset + 1} - {detail.utteranceOffset + detail.utterances.length} / {detail.utteranceTotal.toLocaleString()}
@@ -1118,7 +1174,7 @@ function ExplorePanel({ state }: { state: AppState }): JSX.Element {
                 onClick={() => void loadDocumentDetail(detail.corpusId, detail.docId, detail.utteranceOffset + 500)}
                 disabled={detailLoading || !detail.hasMoreUtterances}
               >
-                다음 발화
+                다음 {detailUnitLabel}
                 <ChevronRight size={16} />
               </button>
             </div>
@@ -1170,8 +1226,8 @@ function UtteranceStream({ detail }: { detail: DocumentDetail }): JSX.Element {
       {detail.utterances.map((utterance) => (
         <div className="utterance" key={utterance.utteranceId}>
           <span>{utterance.sequence}</span>
-          <strong>{utterance.speakerId}</strong>
-          <p>{utterance.form || utterance.originalForm}</p>
+          <strong>{isPseudoSpeaker(utterance.speakerId) ? '' : utterance.speakerId}</strong>
+          <p>{renderCorpusText(utterance.form || utterance.originalForm)}</p>
           <em>{timeLabelForDisplay(utterance)}</em>
         </div>
       ))}
@@ -1198,9 +1254,9 @@ function SentenceStream({ groups, mergeMode = 'sentence' }: { groups: ExploreSen
       {groups.map((group) => (
         <div className="sentence-row" key={group.id}>
           <span>{formatSequenceRange(group.startSequence, group.endSequence)}</span>
-          <strong>{group.speakerId}</strong>
+          <strong>{isPseudoSpeaker(group.speakerId) ? '' : group.speakerId}</strong>
           <div className="merged-sentence">
-            <p>{group.text}</p>
+            <p>{renderCorpusText(group.text)}</p>
             <MergedGroupMeta group={group} mode={mergeMode} />
           </div>
           <em>{group.timeLabel}</em>
@@ -1231,7 +1287,7 @@ function SpeakerUtteranceTable({ detail, speakerIds }: { detail: DocumentDetail;
               <span>{timeLabelForDisplay(utterance)}</span>
             </div>
             <div className="speaker-utterance" style={{ gridColumn: speakerIndex + 2, gridRow: row } as CSSProperties}>
-              <p>{utterance.form || utterance.originalForm}</p>
+              <p>{renderCorpusText(utterance.form || utterance.originalForm)}</p>
             </div>
           </Fragment>
         );
@@ -1287,7 +1343,7 @@ function SpeakerSentenceTable({
                 <div className={`speaker-sentence-cell${isActive ? ' active' : ''}`} key={`${group.id}:${speakerId || speakerIndex}`}>
                   {isActive && (
                     <div className="speaker-sentence-card">
-                      <p>{group.text}</p>
+                      <p>{renderCorpusText(group.text)}</p>
                       <MergedGroupMeta group={group} mode={mergeMode} />
                     </div>
                   )}

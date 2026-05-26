@@ -1,6 +1,19 @@
 :root {
   color: #20242c;
   background: #f7f8fb;
+  --corpus-text-font:
+    "Malgun Gothic",
+    "맑은 고딕",
+    "Noto Sans CJK KR",
+    "Noto Sans KR",
+    "Apple SD Gothic Neo",
+    "UnDotum",
+    "UnBatang",
+    "HCR Dotum",
+    "HCR Batang",
+    "Batang",
+    "바탕",
+    sans-serif;
   font-family:
     "Segoe UI",
     "Malgun Gothic",
@@ -599,6 +612,34 @@ button.danger {
   gap: 10px;
   align-items: center;
   font-size: 16px;
+}
+
+.kwic,
+.result-row > p,
+.document-item span,
+.document-detail-head p,
+.utterance p,
+.sentence-row p,
+.merged-sentence p,
+.speaker-sentence-card p,
+.speaker-utterance p {
+  font-family: var(--corpus-text-font);
+  font-variant-ligatures: contextual;
+  text-rendering: optimizeLegibility;
+}
+
+.source-gap {
+  display: inline-block;
+  min-width: 0.86em;
+  margin: 0 1px;
+  padding: 0 1px;
+  border: 1px solid #ead8aa;
+  border-radius: 3px;
+  background: #fff7df;
+  color: #7c5a20;
+  font-family: "Segoe UI Symbol", var(--corpus-text-font);
+  line-height: 1.1;
+  text-align: center;
 }
 
 .kwic .left {

@@ -1,7 +1,13 @@
 import Database from 'better-sqlite3';
-import { existsSync, unlinkSync } from 'node:fs';
+import { existsSync, renameSync } from 'node:fs';
 import { availableParallelism } from 'node:os';
 import type { CorpusRecord, CorpusStatus, FilterOptions, SearchFilters } from '@shared/types';
+import {
+  canonicalCorpusKey,
+  corpusUnitLabel,
+  displayCorpusName,
+  inferSourceFormatFromCorpus
+} from '../shared/corpusInfo';
 
 export const SCHEMA_VERSION = 3;
 const SQLITE_THREADS = Math.max(2, Math.min(8, availableParallelism() - 1));
@@ -101,6 +107,7 @@ export interface InsertTokenOccurrenceInput {
 
 export class CorpusDatabase {
   readonly db: Database.Database;
+  private bulkIndexesDropped = false;
 
   private readonly termCache = new Map<string, number>();
   private readonly insertCorpusStmt;
@@ -124,6 +131,7 @@ export class CorpusDatabase {
     this.db.pragma('journal_mode = WAL');
     this.db.pragma('synchronous = NORMAL');
     this.db.pragma('foreign_keys = ON');
+    this.db.pragma('busy_timeout = 5000');
     this.db.pragma('temp_store = MEMORY');
     this.db.pragma(`cache_size = ${SQLITE_CACHE_KIB}`);
     this.db.pragma(`mmap_size = ${SQLITE_MMAP_BYTES}`);
@@ -245,22 +253,25 @@ export class CorpusDatabase {
     this.db.close();
   }
 
-  beginBulk(): void {
+  beginBulk(options: { dropPerformanceIndexes?: boolean } = {}): void {
+    this.bulkIndexesDropped = Boolean(options.dropPerformanceIndexes);
     this.db.pragma('synchronous = OFF');
     this.db.pragma(`threads = ${SQLITE_THREADS}`);
     this.db.exec('BEGIN IMMEDIATE');
-    this.dropPerformanceIndexes();
+    if (this.bulkIndexesDropped) this.dropPerformanceIndexes();
   }
 
   commitBulk(): void {
-    this.createPerformanceIndexes();
+    if (this.bulkIndexesDropped) this.createPerformanceIndexes();
     this.db.exec('COMMIT');
+    this.bulkIndexesDropped = false;
     this.db.pragma('synchronous = NORMAL');
   }
 
   rollbackBulk(): void {
     if (this.db.inTransaction) this.db.exec('ROLLBACK');
-    this.createPerformanceIndexes();
+    if (this.bulkIndexesDropped) this.createPerformanceIndexes();
+    this.bulkIndexesDropped = false;
     this.db.pragma('synchronous = NORMAL');
   }
 
@@ -330,7 +341,7 @@ export class CorpusDatabase {
   }
 
   listCorpora(): CorpusRecord[] {
-    return this.db
+    const rows = this.db
       .prepare(
         `SELECT id, name, source_path AS sourcePath, source_type AS sourceType,
                 status, imported_at AS importedAt, file_count AS fileCount,
@@ -340,10 +351,11 @@ export class CorpusDatabase {
          ORDER BY imported_at DESC`
       )
       .all() as CorpusRecord[];
+    return rows.map((row) => hydrateCorpusRecord(row));
   }
 
   getCorpus(corpusId: string): CorpusRecord | undefined {
-    return this.db
+    const row = this.db
       .prepare(
         `SELECT id, name, source_path AS sourcePath, source_type AS sourceType,
                 status, imported_at AS importedAt, file_count AS fileCount,
@@ -353,6 +365,17 @@ export class CorpusDatabase {
          WHERE id = ?`
       )
       .get(corpusId) as CorpusRecord | undefined;
+    return row ? hydrateCorpusRecord(row) : undefined;
+  }
+
+  findReadyCorpusForSource(sourcePath: string, name: string): CorpusRecord | undefined {
+    const sourceKey = canonicalCorpusKey({ name, sourcePath });
+    const normalizedSourcePath = sourcePath.replace(/\\/gu, '/').toLowerCase();
+    return this.listCorpora().find((corpus) => {
+      if (!isUsableReadyCorpus(corpus)) return false;
+      if (corpus.sourcePath.replace(/\\/gu, '/').toLowerCase() === normalizedSourcePath) return true;
+      return canonicalCorpusKey(corpus) === sourceKey;
+    });
   }
 
   hasReadyMessengerJsonCorpus(): boolean {
@@ -361,10 +384,25 @@ export class CorpusDatabase {
         `SELECT 1
          FROM corpora
          WHERE status = 'ready'
+           AND utterance_count > 0
            AND (name LIKE '%MESSENGER_v2.0_JSON%' OR source_path LIKE '%MESSENGER_v2.0_JSON%')
          LIMIT 1`
       )
       .get() as { 1: number } | undefined;
+    return Boolean(row);
+  }
+
+  hasReadyCorpusData(excludeCorpusId?: string): boolean {
+    const row = this.db
+      .prepare(
+        `SELECT 1
+         FROM corpora
+         WHERE status = 'ready'
+           AND id <> ?
+           AND (document_count > 0 OR utterance_count > 0 OR token_count > 0)
+         LIMIT 1`
+      )
+      .get(excludeCorpusId ?? '') as { 1: number } | undefined;
     return Boolean(row);
   }
 
@@ -653,8 +691,26 @@ function resetOutdatedDatabase(databasePath: string): void {
 
   if (userVersion === SCHEMA_VERSION) return;
 
+  const versionLabel = userVersion > 0 ? String(userVersion) : 'unknown';
+  const timestamp = new Date().toISOString().replace(/\D/gu, '');
   for (const suffix of ['', '-wal', '-shm']) {
     const target = `${databasePath}${suffix}`;
-    if (existsSync(target)) unlinkSync(target);
+    if (!existsSync(target)) continue;
+    const backupPath = `${databasePath}.schema-v${versionLabel}.backup-${timestamp}${suffix}`;
+    renameSync(target, backupPath);
   }
+}
+
+function hydrateCorpusRecord(record: CorpusRecord): CorpusRecord {
+  const sourceFormat = inferSourceFormatFromCorpus(record);
+  return {
+    ...record,
+    name: displayCorpusName(record),
+    sourceFormat,
+    unitLabel: corpusUnitLabel(sourceFormat)
+  };
+}
+
+function isUsableReadyCorpus(corpus: CorpusRecord): boolean {
+  return corpus.status === 'ready' && corpus.utteranceCount > 0;
 }

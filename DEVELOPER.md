@@ -1,6 +1,6 @@
 # Developer Guide
 
-이 문서는 CorpusViewer를 빌드하고 GitHub에 배포하는 개발자용 절차입니다. 일반 사용자는 `README.md`와 Release ZIP만 보면 됩니다.
+이 문서는 CorpusViewer Standard를 빌드하고 GitHub에 배포하는 개발자용 절차입니다. 일반 사용자는 `README.md`와 Release ZIP만 보면 됩니다.
 
 ## 요구 사항
 
@@ -34,11 +34,11 @@ npm run package
 ```text
 release/
   win-unpacked/
-    CorpusViewer.exe
+    CorpusViewer Standard.exe
     corpora/
       여기에_말뭉치_ZIP을_넣으세요.txt
     사용법.txt
-  CorpusViewer-v1.0.0-win-x64.zip
+  CorpusViewer-Standard-v1.0.1-win-x64.zip
 ```
 
 `npm run package`는 말뭉치 ZIP을 배포물에 복사하지 않습니다. 사용자가 Windows 파일 탐색기로 `corpora` 폴더에 직접 배치하는 흐름을 기본으로 합니다.
@@ -48,7 +48,7 @@ release/
 ```powershell
 git add .
 git status --short
-git commit -m "Initial CorpusViewer import"
+git commit -m "Initial CorpusViewer Standard import"
 gh repo create <owner>/<repo> --private --source=. --remote=origin --push
 ```
 

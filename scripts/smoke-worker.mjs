@@ -67,6 +67,13 @@ writeFileSync(
             speaker_id: 'P1',
             form: '진짜 좋다',
             original_form: '진짜 좋다'
+          },
+          {
+            id: 'U3',
+            speaker_id: 'P1',
+            form: '\ue57b일신문을 읽다',
+            original_form: '\ue57b일신문을 읽다',
+            tokens: [{ surface: '\ue57b일신문', lemma: '\ue57b일신문', pos: 'NNG' }]
           }
         ]
       }
@@ -121,6 +128,7 @@ try {
 
   const state = await invoke('getState');
   assert(state.corpora.length === 1, 'State did not return the imported corpus.');
+  assert(state.corpora[0].utteranceCount === 3, 'Import did not include the legacy Hangul smoke row.');
 
   const search = await invoke('search', {
     query: '[text="먹다"]',
@@ -143,6 +151,17 @@ try {
     filters: { tokenSource: 'raw' }
   });
   assert(textSearch.results.length === 1, 'Text search did not return the expected result.');
+
+  const legacyHangulSearch = await invoke('search', {
+    query: 'ᄆᆡ일신문을',
+    mode: 'text',
+    field: 'form',
+    contextSize: 2,
+    limit: 10,
+    offset: 0,
+    filters: { tokenSource: 'raw' }
+  });
+  assert(legacyHangulSearch.results.length === 1, 'Legacy Hanyang PUA text was not normalized in the built worker.');
 
   const distanceSearch = await invoke('search', {
     query: '[text="진짜"] []{0,3} [text="좋다"]',
@@ -180,14 +199,14 @@ try {
     }
   });
   assert(csvExport.path === csvPath, 'CSV export did not return the destination path.');
-  assert(csvExport.rowCount === 2, 'CSV export did not write all matching rows.');
+  assert(csvExport.rowCount === 3, 'CSV export did not write all matching rows.');
   const csvText = readFileSync(csvPath, 'utf8');
   assert(csvText.charCodeAt(0) === 0xfeff, 'CSV export did not include the UTF-8 BOM.');
   assert(csvText.includes('corpusName,corpusId,docId'), 'CSV export header is missing.');
   assert(csvText.trim().split(/\r?\n/).length >= 2, 'CSV export did not write data rows.');
 
   const stats = await invoke('stats', { tokenSource: 'raw', stopwords: ['밥을'] });
-  assert(stats.summary.utteranceCount === 2, 'Stats summary is incorrect.');
+  assert(stats.summary.utteranceCount === 3, 'Stats summary is incorrect.');
   assert(!stats.tokenFrequencies.some((row) => row.value === '밥을'), 'Stopword was not excluded from frequency rows.');
 
   const collocation = await invoke('collocation', {

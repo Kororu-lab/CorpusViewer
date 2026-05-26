@@ -11,6 +11,12 @@ import type {
   SearchResult,
   StatsResponse
 } from '@shared/types';
+import {
+  corpusUnitLabel,
+  inferSourceFormatFromMetadata,
+  isDialogueSourceFormat
+} from '../shared/corpusInfo';
+import { normalizeLegacyHangulText } from '../shared/textNormalization';
 import { buildUtteranceFilterClause, CorpusDatabase } from './database';
 import { findAnchor, matchCql, parseCql, type CqlElement, type SearchToken } from './cql';
 import { normalizeToken } from './tokenizer';
@@ -298,6 +304,7 @@ export class CorpusServices {
     return corpora.map((corpus) => ({
       corpusId: corpus.id,
       corpusName: corpus.name,
+      unitLabel: corpus.unitLabel,
       categories: categoriesByCorpus.get(corpus.id) ?? []
     }));
   }
@@ -318,17 +325,32 @@ export class CorpusServices {
       params.push(`%${request.query}%`, `%${request.query}%`, `%${request.query}%`);
     }
 
-    return this.database.db
+    const rows = this.database.db
       .prepare(
         `SELECT d.corpus_id AS corpusId, d.doc_id AS docId, d.title, d.topic,
-                d.category, d.date, COALESCE(ds.utterance_count, 0) AS utteranceCount
+                d.category, d.date, d.metadata_json AS metadataJson,
+                COALESCE(ds.utterance_count, 0) AS utteranceCount
          FROM documents d
          LEFT JOIN document_stats ds ON ds.corpus_id = d.corpus_id AND ds.doc_id = d.doc_id
          WHERE ${clauses.join(' AND ')}
          ORDER BY d.doc_id
          LIMIT ? OFFSET ?`
       )
-      .all(...params, request.limit, request.offset) as DocumentListItem[];
+      .all(...params, request.limit, request.offset) as Array<DocumentListItem & { metadataJson: string }>;
+    return rows.map((row) => {
+      const sourceFormat = inferSourceFormatFromMetadata(safeJson(row.metadataJson));
+      return {
+        corpusId: row.corpusId,
+        docId: row.docId,
+        title: row.title,
+        topic: row.topic,
+        category: row.category,
+        date: row.date,
+        utteranceCount: row.utteranceCount,
+        sourceFormat,
+        unitLabel: corpusUnitLabel(sourceFormat)
+      };
+    });
   }
 
   getDocument(corpusId: string, docId: string, offset = 0, limit = DOCUMENT_UTTERANCE_PAGE_SIZE): DocumentDetail {
@@ -377,6 +399,8 @@ export class CorpusServices {
       .prepare('SELECT utterance_count AS utteranceCount FROM document_stats WHERE corpus_id = ? AND doc_id = ?')
       .get(corpusId, docId) as { utteranceCount: number } | undefined;
     const utteranceTotal = stats?.utteranceCount ?? utterances.length;
+    const metadata = safeJson(doc.metadataJson);
+    const sourceFormat = inferSourceFormatFromMetadata(metadata);
 
     return {
       corpusId: doc.corpusId,
@@ -385,7 +409,10 @@ export class CorpusServices {
       topic: doc.topic,
       category: doc.category,
       date: doc.date,
-      metadata: safeJson(doc.metadataJson),
+      metadata,
+      sourceFormat,
+      unitLabel: corpusUnitLabel(sourceFormat),
+      isDialogue: isDialogueSourceFormat(sourceFormat),
       speakers,
       utterances,
       utteranceOffset: offset,
@@ -440,6 +467,7 @@ export class CorpusServices {
 
   private searchTextByFts(request: SearchRequest): SearchResponse {
     const field = request.field === 'original_form' ? 'original_form' : 'form';
+    const query = normalizeLegacyHangulText(request.query);
     const filter = buildUtteranceFilterClause(request.filters, 'u');
     const ftsColumn = field === 'original_form' ? 'original_form' : 'form';
     const filterSql = filter.clause ? ` AND ${filter.clause.replace(/^WHERE /u, '')}` : '';
@@ -451,12 +479,12 @@ export class CorpusServices {
          ORDER BY u.id
          LIMIT ? OFFSET ?`
       )
-      .all(`%${request.query}%`, ...filter.params, request.limit + 1, request.offset) as UtteranceRow[];
+      .all(`%${query}%`, ...filter.params, request.limit + 1, request.offset) as UtteranceRow[];
 
     return {
       results: rows
         .slice(0, request.limit)
-        .map((row) => this.toSearchResult(row, request.contextSize, request.filters.tokenSource || 'raw', { kind: 'text', value: request.query })),
+        .map((row) => this.toSearchResult(row, request.contextSize, request.filters.tokenSource || 'raw', { kind: 'text', value: query })),
       hasMore: rows.length > request.limit,
       warnings: []
     };

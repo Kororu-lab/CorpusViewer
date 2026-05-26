@@ -46,6 +46,10 @@ export class DatabaseWorkerClient {
     return Promise.all(Array.from(this.workers.keys()).map((role) => this.cancelRole(role))).then(() => undefined);
   }
 
+  cancelImportJob(): Promise<void> {
+    return this.cancelRole('import');
+  }
+
   cancelJob(jobId: string): Promise<void> {
     const role = jobId.split(':')[0] as WorkerRole;
     if (role !== 'metadata' && role !== 'query' && role !== 'import') return Promise.resolve();
@@ -90,7 +94,7 @@ export class DatabaseWorkerClient {
       if (!pending) return;
       this.pending.delete(message.id);
       if (message.ok) pending.resolve(message.result);
-      else pending.reject(new Error(message.error ?? '작업에 실패했습니다.'));
+      else pending.reject(new Error(errorMessage(message.error)));
     });
 
     worker.on('error', (error) => {
@@ -165,6 +169,22 @@ export class DatabaseWorkerClient {
 
 function roleForAction(action: string): WorkerRole {
   if (action === 'getState' || action === 'exploreTree' || action === 'listDocuments' || action === 'getDocument') return 'metadata';
-  if (action === 'importDefault' || action === 'importSources' || action === 'deleteCorpus' || action === 'rebuildCorpus') return 'import';
+  if (action === 'deleteCorpus') return 'metadata';
+  if (action === 'importDefault' || action === 'importSources' || action === 'rebuildCorpus') return 'import';
   return 'query';
+}
+
+function errorMessage(value: unknown): string {
+  if (typeof value === 'string' && value.trim()) return value;
+  if (value && typeof value === 'object') {
+    const maybe = value as { message?: unknown; error?: unknown };
+    if (typeof maybe.message === 'string' && maybe.message.trim()) return maybe.message;
+    if (typeof maybe.error === 'string' && maybe.error.trim()) return maybe.error;
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return '작업에 실패했습니다.';
+    }
+  }
+  return '작업에 실패했습니다.';
 }

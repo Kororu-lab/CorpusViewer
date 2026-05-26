@@ -256,13 +256,27 @@ parentPort?.on('message', (request: WorkerRequest) => {
       post({ id: request.id, ok: true, result });
     })
     .catch((error) => {
-      if (currentJob) finishJob(currentJob, error instanceof ImportCancelledError ? 'cancelled' : 'failed', error instanceof Error ? error.message : String(error));
+      const message = errorMessage(error);
+      if (currentJob) finishJob(currentJob, error instanceof ImportCancelledError ? 'cancelled' : 'failed', message);
       post({
         id: request.id,
         ok: false,
-        error: error instanceof Error ? error.message : String(error)
+        error: message
       });
     });
 });
 
 process.once('exit', () => database.close());
+
+function errorMessage(error: unknown): string {
+  if (error instanceof Error && error.message) return error.message;
+  if (typeof error === 'string' && error.trim()) return error;
+  if (error && typeof error === 'object') {
+    try {
+      return JSON.stringify(error);
+    } catch {
+      return '작업에 실패했습니다.';
+    }
+  }
+  return '작업에 실패했습니다.';
+}

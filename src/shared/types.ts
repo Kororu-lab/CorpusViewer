@@ -12,6 +12,8 @@ export interface CorpusRecord {
   utteranceCount: number;
   tokenCount: number;
   error?: string | null;
+  sourceFormat?: string;
+  unitLabel?: string;
 }
 
 export interface AppState {
@@ -185,6 +187,7 @@ export interface CollocationResponse {
 export interface ExploreNode {
   corpusId: string;
   corpusName: string;
+  unitLabel?: string;
   categories: Array<{
     name: string;
     count: number;
@@ -209,6 +212,8 @@ export interface DocumentListItem {
   category: string;
   date: string;
   utteranceCount: number;
+  unitLabel?: string;
+  sourceFormat?: string;
 }
 
 export interface DocumentDetail {
@@ -219,6 +224,9 @@ export interface DocumentDetail {
   category: string;
   date: string;
   metadata: Record<string, unknown>;
+  sourceFormat?: string;
+  unitLabel?: string;
+  isDialogue?: boolean;
   speakers: Array<Record<string, unknown>>;
   utteranceOffset: number;
   utteranceTotal: number;

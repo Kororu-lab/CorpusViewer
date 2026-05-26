@@ -36,7 +36,7 @@ export function registerIpc(mainWindow: BrowserWindow, paths: AppPaths): Databas
       title: '말뭉치 가져오기',
       properties: ['openFile', 'openDirectory', 'multiSelections'],
       filters: [
-        { name: 'Corpus files', extensions: ['zip', 'json', 'csv'] },
+        { name: 'Corpus files', extensions: ['zip', 'json', 'csv', 'xml', 'txt'] },
         { name: 'All files', extensions: ['*'] }
       ]
     });
@@ -47,7 +47,10 @@ export function registerIpc(mainWindow: BrowserWindow, paths: AppPaths): Databas
   ipcMain.handle('job:cancel-current', () => worker.cancelCurrentJob());
   ipcMain.handle('job:cancel', (_event, jobId: string) => worker.cancelJob(jobId));
   ipcMain.handle('job:get-state', (_event, jobId: string) => worker.getJobState(jobId));
-  ipcMain.handle('corpus:delete', (_event, corpusId: string) => worker.invoke<void>('deleteCorpus', corpusId));
+  ipcMain.handle('corpus:delete', async (_event, corpusId: string) => {
+    await worker.cancelImportJob();
+    return worker.invoke<void>('deleteCorpus', corpusId);
+  });
   ipcMain.handle('corpus:rebuild', (_event, corpusId: string) => worker.invoke<CorpusRecord>('rebuildCorpus', corpusId));
   ipcMain.handle('search:run', (_event, request: SearchRequest) => worker.invoke<SearchResponse>('search', request));
   ipcMain.handle('search:export-csv', async (_event, request: SearchRequest) => {

@@ -1,20 +1,20 @@
-# CorpusViewer
+﻿# CorpusViewer Standard
 
-![Version](https://img.shields.io/badge/version-v1.0-blue)
+![Version](https://img.shields.io/badge/version-v1.0.1-blue)
 
 지정된 말뭉치를 Windows에서 바로 색인하고 검색하는 데스크톱 프로그램.
 
 ## 설치와 실행
 
-1. GitHub Releases에서 `CorpusViewer-v1.0.0-win-x64.zip`을 다운로드
+1. GitHub Releases에서 `CorpusViewer-Standard-v1.0.1-win-x64.zip`을 다운로드
 2. Windows 파일 탐색기에서 ZIP 압축 해제
-3. 압축을 푼 폴더에서 `CorpusViewer.exe`를 실행
+3. 압축을 푼 폴더에서 `CorpusViewer Standard.exe`를 실행
 
 ## 말뭉치 ZIP 넣기
 
-1. `CorpusViewer.exe`가 있는 폴더 안의 `corpora` 폴더 열기
+1. `CorpusViewer Standard.exe`가 있는 폴더 안의 `corpora` 폴더 열기
 2. 보유한 말뭉치 ZIP 파일을 `corpora` 폴더에 복사
-3. `CorpusViewer.exe`를 실행
+3. `CorpusViewer Standard.exe`를 실행
 4. 왼쪽의 “말뭉치” 화면에서 “corpora 폴더 가져오기” 클릭
 5. 색인이 끝나면 검색, 통계, 공기어, 탐색 기능을 사용 가능
 
@@ -23,8 +23,8 @@
 ## 배포 폴더 구조
 
 ```text
-CorpusViewer-v1.0.0-win-x64/
-  CorpusViewer.exe
+CorpusViewer-Standard-v1.0.1-win-x64/
+  CorpusViewer Standard.exe
   corpora/
     여기에_말뭉치_ZIP을_넣으세요.txt
   CorpusViewerData/        앱 실행 중 자동 생성
@@ -41,6 +41,11 @@ CorpusViewer-v1.0.0-win-x64/
 | 일상 대화 말뭉치 2023 | 1.1 | `NIKL_DIALOGUE_2023_v1.1.zip` | 지원, 파싱/색인 확인 | [모두의 말뭉치 검색](https://kli.korean.go.kr/corpus/main/requestMain.do?tabType=thumb&lang=ko&keyword=%EC%9D%BC%EC%83%81%20%EB%8C%80%ED%99%94%20%EB%A7%90%EB%AD%89%EC%B9%98%202023) |
 | 일상 대화 말뭉치 2024 | 1.0 | `NIKL_DIALOGUE_2024_v1.0.zip` | 지원, 파싱/색인 확인 | [모두의 말뭉치 검색](https://kli.korean.go.kr/corpus/main/requestMain.do?tabType=thumb&lang=ko&keyword=%EC%9D%BC%EC%83%81%20%EB%8C%80%ED%99%94%20%EB%A7%90%EB%AD%89%EC%B9%98%202024) |
 | 메신저 말뭉치 | 2.0 | `NIKL_MESSENGER_v2.0_JSON.zip` | 지원, 파싱/색인 확인 | [모두의 말뭉치 검색](https://kli.korean.go.kr/corpus/main/requestMain.do?tabType=thumb&lang=ko&keyword=%EB%A9%94%EC%8B%A0%EC%A0%80%20%EB%A7%90%EB%AD%89%EC%B9%98) |
+| 역사 말뭉치 2023 | 2.0 | `NIKL_Historical Korean Corpus 2023_v2.0.zip` | 지원, XML sent 색인 | [모두의 말뭉치 검색](https://kli.korean.go.kr/corpus/main/requestMain.do) |
+| 역사 말뭉치 2024 | 1.0 | `Historical Korean Corpus 2024_v1.0.zip` | 지원, XML sent 색인 | [모두의 말뭉치 검색](https://kli.korean.go.kr/corpus/main/requestMain.do) |
+| 맥락 추론 말뭉치 2023 | 1.1 | `NIKL_CI_2023_v1.1.zip` | 지원, 중첩 대화 JSON flatten | [모두의 말뭉치 검색](https://kli.korean.go.kr/corpus/main/requestMain.do) |
+| 비윤리 문장 탐지 말뭉치 2023 | 1.0 | `NIKL_IU_2023_v1.0.zip` | 지원, sentence 단위 색인 | [모두의 말뭉치 검색](https://kli.korean.go.kr/corpus/main/requestMain.do) |
+| 21세기 세종계획 말뭉치 | - | `21세기 세종계획.zip` | 지원, `02_말뭉치`의 중첩 ZIP/TEI TXT 색인 | - |
 
 ## 주요 기능
 
@@ -134,7 +139,7 @@ CorpusViewer-v1.0.0-win-x64/
 
 ## 라이선스
 
-CorpusViewer 프로그램 코드는 [MIT License](LICENSE)로 배포됨.
+CorpusViewer Standard 프로그램 코드는 [MIT License](LICENSE)로 배포됨.
 
 말뭉치 원자료, 사용자가 직접 넣는 ZIP/JSON/CSV 데이터, 원자료에서 생성한 색인 데이터베이스는 이 저장소에 포함되지 않으며 MIT License 적용 대상이 아님. 해당 데이터의 사용, 보관, 재배포 책임은 원자료 제공처의 라이선스와 사용자의 이용 조건을 따름.
 
