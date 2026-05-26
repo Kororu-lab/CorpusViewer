@@ -1,6 +1,6 @@
 {
   "name": "corpusviewer-standard",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Portable corpus search, statistics, and exploration app for Korean linguists.",
   "main": "out/main/index.js",
   "author": "Kororu-lab",

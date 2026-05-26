@@ -1,12 +1,12 @@
 ﻿# CorpusViewer Standard
 
-![Version](https://img.shields.io/badge/version-v1.0.1-blue)
+![Version](https://img.shields.io/badge/version-v1.0.2-blue)
 
 지정된 말뭉치를 Windows에서 바로 색인하고 검색하는 데스크톱 프로그램.
 
 ## 설치와 실행
 
-1. GitHub Releases에서 `CorpusViewer-Standard-v1.0.1-win-x64.zip`을 다운로드
+1. GitHub Releases에서 `CorpusViewer-Standard-v1.0.2-win-x64.zip`을 다운로드
 2. Windows 파일 탐색기에서 ZIP 압축 해제
 3. 압축을 푼 폴더에서 `CorpusViewer Standard.exe`를 실행
 
@@ -23,7 +23,7 @@
 ## 배포 폴더 구조
 
 ```text
-CorpusViewer-Standard-v1.0.1-win-x64/
+CorpusViewer-Standard-v1.0.2-win-x64/
   CorpusViewer Standard.exe
   corpora/
     여기에_말뭉치_ZIP을_넣으세요.txt
